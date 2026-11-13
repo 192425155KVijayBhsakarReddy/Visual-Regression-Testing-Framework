@@ -46,3 +46,4 @@ visual_regression/storage/reports/*
 !visual_regression/storage/baselines/.gitkeep
 visual_regression/*.db
 ci_reports/*
+

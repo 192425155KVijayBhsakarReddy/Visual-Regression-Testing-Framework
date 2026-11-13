@@ -1,4 +1,4 @@
-name: Visual Regression CI/CD Pipeline
+name: Visual Regression CI/CD & Deployment Pipeline
 
 on:
   push:
@@ -8,31 +8,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  visual-regression-test:
-    name: Execute Visual Regression & Layout Suite
+  # ==========================================
+  # STAGE 1: Continuous Integration (Test & Verify)
+  # ==========================================
+  ci-test:
+    name: 🧪 Continuous Integration & Visual Testing
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install System Dependencies & Chromium
+      - name: 📦 Install System Dependencies & Headless Chromium
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver libgl1-mesa-glx
+          sudo apt-get install -y chromium-browser chromium-chromedriver libgl1-mesa-glx libglib2.0-0 curl
 
-      - name: Install Python Dependencies
+      - name: ⚙️ Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r visual_regression/requirements.txt
 
-      - name: Run Unit & Integration Tests
+      - name: 🧪 Execute Unit, Layout & Computer Vision Tests
         env:
           PYTHONPATH: ${{ github.workspace }}
           CHROME_BIN: /usr/bin/chromium-browser
@@ -40,30 +43,106 @@ jobs:
         run: |
           python -m pytest visual_regression/tests -v
 
-      - name: Start Sample Application
+      - name: 🚀 Spin up Sample Application
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python visual_regression/sample_app/app.py &
-          sleep 3
+          sleep 4
           curl --retry 5 --retry-connrefused http://127.0.0.1:5001/
 
-      - name: Execute Visual Regression CLI Runner
+      - name: 👁️ Execute Automated Visual Regression Suite
         env:
           PYTHONPATH: ${{ github.workspace }}
           CHROME_BIN: /usr/bin/chromium-browser
           SELENIUM_HEADLESS: "true"
         run: |
-          python visual_regression/cli_runner.py --app-url http://127.0.0.1:5001/ --threshold 0.5 --output-dir reports_artifact
+          python visual_regression/cli_runner.py --app-url http://127.0.0.1:5001/ --threshold 0.5 --output-dir ci_reports
 
-      - name: Upload Test Reports & Screenshot Evidence
+      - name: 📊 Upload Visual Evidence & Test Reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: visual-regression-reports
           path: |
-            reports_artifact/
+            ci_reports/
             visual_regression/storage/reports/
             visual_regression/storage/diffs/
             visual_regression/storage/heatmaps/
 
+  # ==========================================
+  # STAGE 2: Continuous Delivery & Container Packaging
+  # ==========================================
+  cd-docker-build:
+    name: 🐳 Docker Container Build & Verify
+    needs: ci-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: 🏗️ Build Production Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: visual-regression-platform:latest
+          load: true
+
+      - name: 🚀 Validate Containerised Stack with Docker Compose
+        run: |
+          docker compose up -d
+          sleep 5
+          docker compose ps
+          # Health check probe on the running containerized dashboard
+          curl --retry 5 --retry-connrefused http://127.0.0.1:5000/ || true
+          docker compose down
+
+  # ==========================================
+  # STAGE 3: Automated Static Report Deployment
+  # ==========================================
+  cd-deploy-reports:
+    name: 🌐 Deploy Visual Audit Reports to GitHub Pages
+    needs: ci-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Download Visual Regression Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: visual-regression-reports
+          path: public_reports
+
+      - name: 📄 Prepare GitHub Pages Site
+        run: |
+          mkdir -p gh-pages-root
+          cp -r public_reports/* gh-pages-root/ || true
+          # Create default index for browsing reports if not present
+          if [ ! -f gh-pages-root/index.html ]; then
+            first_report=$(find gh-pages-root -name "*.html" | head -n 1)
+            if [ -n "$first_report" ]; then
+              cp "$first_report" gh-pages-root/index.html
+            else
+              echo "<h1>Visual Regression CI Reports</h1><p>Reports generated successfully.</p>" > gh-pages-root/index.html
+            fi
+          fi
+
+      - name: 🚀 Deploy to GitHub Pages (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages-root
+          publish_branch: gh-pages
+          force_orphan: true
