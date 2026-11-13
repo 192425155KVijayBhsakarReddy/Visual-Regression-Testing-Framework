@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Portal - Sample App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .hero-section {
+            padding: 60px 0;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            /* Regressed modification: misalignment */
+            text-align: {% if regressed %}right{% else %}left{% endif %};
+        }
+
+        .cta-btn {
+            /* Regressed modification: button color from blue to red and shifted padding */
+            background-color: {% if regressed %}#dc2626{% else %}#2563eb{% endif %};
+            border-color: {% if regressed %}#dc2626{% else %}#2563eb{% endif %};
+            color: #ffffff;
+            padding: {% if regressed %}14px 36px{% else %}10px 24px{% endif %};
+            font-size: {% if regressed %}1.15rem{% else %}1rem{% endif %};
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            height: 100%;
+        }
+
+        footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 30px 0;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/">EnterprisePortal</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <li class="nav-item me-3"><a class="nav-link active" href="/">Home</a></li>
+                    <li class="nav-item me-3"><a class="nav-link" href="/login">Login</a></li>
+                    {% if not regressed %}
+                    <!-- In regressed mode, this button is missing -->
+                    <li class="nav-item">
+                        <a href="/login" class="btn btn-sm btn-outline-primary" id="btn-signup">Sign Up</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <header class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-5 fw-bold mb-3">Enterprise Cloud Orchestration Platform</h1>
+                    <p class="lead text-muted mb-4">
+                        Seamlessly monitor application infrastructure, telemetry events, and release verifications.
+                    </p>
+                    <a href="/login" class="cta-btn" id="main-cta-button">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section class="container my-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card" id="card-feature-1">
+                    <h5 class="fw-bold mb-2">Automated Telemetry</h5>
+                    <p class="text-muted small">Continuous telemetry metrics gathered at sub-millisecond granularity across environments.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card" id="card-feature-2">
+                    <h5 class="fw-bold mb-2">High Availability</h5>
+                    <p class="text-muted small">Distributed multi-region failover ensuring 99.99% uptime compliance.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card" id="card-feature-3">
+                    <h5 class="fw-bold mb-2">Enterprise Security</h5>
+                    <p class="text-muted small">End-to-end data encryption in transit and at rest with hardware security modules.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-0 small">© 2026 EnterprisePortal Inc. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
+

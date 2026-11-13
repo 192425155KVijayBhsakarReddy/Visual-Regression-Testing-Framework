@@ -1,0 +1,48 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+.venv/
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Storage artifacts (ignore dynamic run files except baselines)
+visual_regression/storage/screenshots/*
+visual_regression/storage/diffs/*
+visual_regression/storage/heatmaps/*
+visual_regression/storage/reports/*
+!visual_regression/storage/baselines/.gitkeep
+visual_regression/*.db
+ci_reports/*

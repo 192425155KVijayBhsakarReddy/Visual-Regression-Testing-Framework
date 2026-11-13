@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Main Visual Regression Dashboard & Engine
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python visual_regression/app.py
+    ports:
+      - "5000:5000"
+    environment:
+      - SELENIUM_HEADLESS=true
+      - DEFAULT_THRESHOLD=0.5
+      - CHROME_BIN=/usr/bin/chromium
+    volumes:
+      - ./visual_regression/storage:/app/visual_regression/storage
+      - ./visual_regression/visual_regression.db:/app/visual_regression/visual_regression.db
+    depends_on:
+      - sample_app
+    networks:
+      - test-network
+
+  # Target Sample Web Application for regression tests
+  sample_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python visual_regression/sample_app/app.py
+    ports:
+      - "5001:5001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+

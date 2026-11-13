@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block page_title %}Baseline Screenshot Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Approved Baselines</h4>
+        <p class="text-muted small mb-0">Reference screenshots used as golden standards for visual regression comparisons.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadBaselineModal">
+            <i class="bi bi-upload me-1"></i> Upload Baseline
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#captureBaselineModal">
+            <i class="bi bi-camera me-1"></i> Capture via Selenium
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if baselines %}
+        {% for b in baselines %}
+        <div class="col-xl-4 col-md-6">
+            <div class="table-card h-100 d-flex flex-direction-column">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-dark">{{ b.name }}</div>
+                        <div class="text-muted small">{{ b.application_name }}</div>
+                    </div>
+                    <span class="badge bg-light text-dark border">{{ b.viewport }}</span>
+                </div>
+                <div class="p-2 bg-light text-center" style="max-height: 220px; overflow: hidden;">
+                    <a href="/api/media?path={{ b.file_path }}" target="_blank">
+                        <img src="/api/media?path={{ b.file_path }}" class="img-fluid rounded border" alt="{{ b.name }}" style="max-height: 200px; object-fit: contain;">
+                    </a>
+                </div>
+                <div class="p-3 mt-auto">
+                    <div class="small text-muted mb-2 text-truncate" title="{{ b.page_url }}">
+                        <i class="bi bi-link-45deg"></i> {{ b.page_url }}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small text-secondary mb-3">
+                        <span>Dimensions: {{ b.width }}x{{ b.height }} px</span>
+                        <span>{{ b.created_at[:10] }}</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/testing/run?app_id={{ b.application_id }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                            <i class="bi bi-play-fill"></i> Test Against
+                        </a>
+                        <form action="/baselines/delete/{{ b.id }}" method="POST" onsubmit="return confirm('Delete this approved baseline?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="table-card text-center py-5">
+                <i class="bi bi-images fs-1 text-muted d-block mb-3"></i>
+                <h5>No Baselines Established</h5>
+                <p class="text-muted small">Capture a golden baseline using Selenium or upload an approved screenshot.</p>
+                <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#captureBaselineModal">
+                    <i class="bi bi-camera me-1"></i> Capture Baseline Now
+                </button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Capture Baseline Modal -->
+<div class="modal fade" id="captureBaselineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="/baselines/capture" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Capture Golden Baseline via Selenium</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Application</label>
+                    <select name="application_id" class="form-select" required onchange="updateCaptureUrl(this)">
+                        <option value="" disabled selected>-- Select Application --</option>
+                        {% for a in applications %}
+                        <option value="{{ a.id }}" data-url="{{ a.url }}">{{ a.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Baseline Name / Label</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Homepage V1.0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Page URL to Capture</label>
+                    <input type="url" name="page_url" id="captureUrlInput" class="form-control" placeholder="http://127.0.0.1:5001" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Viewport Resolution</label>
+                    <select name="viewport" class="form-select">
+                        <option value="desktop" selected>Desktop (1366x768)</option>
+                        <option value="laptop">Laptop (1280x800)</option>
+                        <option value="tablet">Tablet (768x1024)</option>
+                        <option value="mobile">Mobile (375x812)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Capture & Save Baseline</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Upload Baseline Modal -->
+<div class="modal fade" id="uploadBaselineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="/baselines/upload" method="POST" enctype="multipart/form-data" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Approved Baseline Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Application</label>
+                    <select name="application_id" class="form-select" required>
+                        {% for a in applications %}
+                        <option value="{{ a.id }}">{{ a.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Baseline Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Figma Export Landing" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Associated Page URL</label>
+                    <input type="url" name="page_url" class="form-control" placeholder="http://127.0.0.1:5001" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Viewport</label>
+                    <select name="viewport" class="form-select">
+                        <option value="desktop">Desktop (1366x768)</option>
+                        <option value="laptop">Laptop (1280x800)</option>
+                        <option value="tablet">Tablet (768x1024)</option>
+                        <option value="mobile">Mobile (375x812)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Screenshot File (.png, .jpg)</label>
+                    <input type="file" name="file" class="form-control" accept="image/png, image/jpeg" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Upload & Approve</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateCaptureUrl(select) {
+        const option = select.options[select.selectedIndex];
+        if (option && option.dataset.url) {
+            document.getElementById('captureUrlInput').value = option.dataset.url;
+        }
+    }
+</script>
+{% endblock %}
+

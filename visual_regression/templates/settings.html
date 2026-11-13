@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block page_title %}Framework Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="table-card p-4">
+            <h4 class="mb-1">Visual Regression Configuration</h4>
+            <p class="text-muted small mb-4">Core engine parameters, storage directories, and browser execution flags.</p>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Database Path</label>
+                <input type="text" class="form-control" value="{{ config.DATABASE_PATH }}" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Screenshots Directory</label>
+                <input type="text" class="form-control" value="{{ config.SCREENSHOTS_DIR }}" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Baselines Directory</label>
+                <input type="text" class="form-control" value="{{ config.BASELINES_DIR }}" readonly>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Default Threshold</label>
+                    <input type="text" class="form-control" value="{{ config.DEFAULT_THRESHOLD }}%" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Default Viewport</label>
+                    <input type="text" class="form-control" value="{{ config.DEFAULT_VIEWPORT }}" readonly>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Headless Execution</label>
+                <input type="text" class="form-control" value="{{ config.HEADLESS }}" readonly>
+            </div>
+
+            <div class="alert alert-info small mt-4 mb-0">
+                <i class="bi bi-info-circle-fill me-1"></i> System configuration is managed via environment variables (<code>DEFAULT_THRESHOLD</code>, <code>SELENIUM_HEADLESS</code>, <code>DATABASE_PATH</code>).
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

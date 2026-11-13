@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block page_title %}Comparison Results - Test #{{ test.id }}{% endblock %}
+
+{% block content %}
+<!-- Result Header Banner -->
+<div class="table-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <h4 class="mb-0">Test Execution #{{ test.id }}</h4>
+                {% if test.status == 'PASS' %}
+                    <span class="badge badge-pass fs-6">PASS</span>
+                {% elif test.status == 'FAIL' %}
+                    <span class="badge badge-fail fs-6">FAIL</span>
+                {% else %}
+                    <span class="badge badge-error fs-6">{{ test.status }}</span>
+                {% endif %}
+            </div>
+            <p class="text-muted small mb-0">
+                Application: <strong>{{ test.application_name }}</strong> • URL: <a href="{{ test.test_url }}" target="_blank">{{ test.test_url }}</a> • Executed: {{ test.executed_at }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/reports/view/{{ test.id }}" target="_blank" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> View Report
+            </a>
+            {% if test.status == 'FAIL' %}
+            <form action="/baselines/approve-from-test/{{ test.id }}" method="POST" onsubmit="return confirm('Update approved baseline with this current screenshot? This cannot be undone automatically.');">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check2-circle me-1"></i> Accept & Update Baseline
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-title">Pixel Difference</div>
+            <div class="stat-card-value {% if test.difference_percentage > test.threshold %}text-danger{% else %}text-success{% endif %}">
+                {{ test.difference_percentage }}%
+            </div>
+            <div class="small text-muted mt-1">Threshold: {{ test.threshold }}%</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-title">Structural Similarity (SSIM)</div>
+            <div class="stat-card-value text-primary">{{ test.ssim_score }}</div>
+            <div class="small text-muted mt-1">Scale 0.0 (Unmatched) - 1.0 (Identical)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-title">Changed Pixels</div>
+            <div class="stat-card-value text-dark">{{ "{:,}".format(test.changed_pixels) }}</div>
+            <div class="small text-muted mt-1">Out of {{ "{:,}".format(test.total_pixels) }} total pixels</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-title">Detected Defects</div>
+            <div class="stat-card-value text-warning">{{ defects|length }}</div>
+            <div class="small text-muted mt-1">Visual regions & DOM modifications</div>
+        </div>
+    </div>
+</div>
+
+<!-- Screenshot Comparison Gallery -->
+<div class="table-card p-4 mb-4">
+    <h5 class="mb-3">Visual Diagnostics & Side-by-Side Comparison</h5>
+    
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pills-diff-tab" data-bs-toggle="pill" data-bs-target="#pills-diff" type="button" role="tab">Difference Overlay</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-heatmap-tab" data-bs-toggle="pill" data-bs-target="#pills-heatmap" type="button" role="tab">Intensity Heatmap</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-side-tab" data-bs-toggle="pill" data-bs-target="#pills-side" type="button" role="tab">Side by Side</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        <!-- Tab 1: Difference Overlay -->
+        <div class="tab-pane fade show active" id="pills-diff" role="tabpanel">
+            <div class="border rounded p-2 bg-light text-center">
+                <a href="/api/media?path={{ test.diff_path }}" target="_blank">
+                    <img src="/api/media?path={{ test.diff_path }}" class="img-fluid rounded border shadow-sm" alt="Difference Overlay" style="max-height: 540px;">
+                </a>
+            </div>
+            <p class="text-muted small mt-2">Red boxes and highlight overlays designate areas with measured pixel variance exceeding threshold.</p>
+        </div>
+
+        <!-- Tab 2: Heatmap -->
+        <div class="tab-pane fade" id="pills-heatmap" role="tabpanel">
+            <div class="border rounded p-2 bg-light text-center">
+                <a href="/api/media?path={{ test.heatmap_path }}" target="_blank">
+                    <img src="/api/media?path={{ test.heatmap_path }}" class="img-fluid rounded border shadow-sm" alt="Difference Heatmap" style="max-height: 540px;">
+                </a>
+            </div>
+            <p class="text-muted small mt-2">Jet colormap highlights concentration and intensity of layout changes.</p>
+        </div>
+
+        <!-- Tab 3: Side-by-side -->
+        <div class="tab-pane fade" id="pills-side" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-6 text-center">
+                    <div class="fw-semibold text-secondary mb-2">Approved Baseline</div>
+                    <div class="border rounded p-2 bg-light">
+                        <a href="/api/media?path={{ test.baseline_file_path }}" target="_blank">
+                            <img src="/api/media?path={{ test.baseline_file_path }}" class="img-fluid rounded" alt="Baseline" style="max-height: 480px;">
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center">
+                    <div class="fw-semibold text-secondary mb-2">Current Test Capture</div>
+                    <div class="border rounded p-2 bg-light">
+                        <a href="/api/media?path={{ test.screenshot_path }}" target="_blank">
+                            <img src="/api/media?path={{ test.screenshot_path }}" class="img-fluid rounded" alt="Current" style="max-height: 480px;">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Defects Table -->
+<div class="table-card">
+    <div class="table-card-header">
+        Detected Defects & Layout Modifications ({{ defects|length }})
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Coordinates (X, Y)</th>
+                    <th>Dimensions (W x H)</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if defects %}
+                    {% for d in defects %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ d.defect_type }}</span></td>
+                        <td>{{ d.description }}</td>
+                        <td>{{ d.x }}, {{ d.y }}</td>
+                        <td>{{ d.width }} x {{ d.height }} px</td>
+                        <td>
+                            {% if d.severity == 'HIGH' %}
+                                <span class="badge badge-fail">HIGH</span>
+                            {% elif d.severity == 'MEDIUM' %}
+                                <span class="badge badge-error">MEDIUM</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">LOW</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle-fill text-success fs-4 d-block mb-2"></i>
+                            Zero defects detected. Screen layout matches baseline within tolerance.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block page_title %}Testing Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Total Test Runs</div>
+            <div class="stat-card-value">{{ stats.total_tests }}</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Passed Tests</div>
+            <div class="stat-card-value text-success">{{ stats.passed_tests }}</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Failed Tests</div>
+            <div class="stat-card-value text-danger">{{ stats.failed_tests }}</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Visual Defects</div>
+            <div class="stat-card-value text-warning">{{ stats.total_defects }}</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Active Baselines</div>
+            <div class="stat-card-value text-primary">{{ stats.total_baselines }}</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-card-title">Applications</div>
+            <div class="stat-card-value text-dark">{{ stats.total_apps }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="table-card p-3 h-100">
+            <div class="fw-semibold text-secondary mb-3">Test Pass / Fail Ratio</div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="ratioChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 col-md-6">
+        <div class="table-card p-3 h-100">
+            <div class="fw-semibold text-secondary mb-3">Difference Percentage Over Recent Runs</div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Executions Table -->
+<div class="table-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <span>Recent Test Executions</span>
+        <a href="/testing/history" class="btn btn-sm btn-outline-secondary">View Full History</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Test ID</th>
+                    <th>Application</th>
+                    <th>Page Tested</th>
+                    <th>Viewport</th>
+                    <th>Diff %</th>
+                    <th>Threshold</th>
+                    <th>Result</th>
+                    <th>Executed At</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_tests %}
+                    {% for t in recent_tests %}
+                    <tr>
+                        <td class="fw-semibold">#{{ t.id }}</td>
+                        <td>{{ t.application_name }}</td>
+                        <td class="text-truncate" style="max-width: 200px;" title="{{ t.test_url }}">{{ t.test_url }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ t.viewport }}</span></td>
+                        <td class="fw-semibold {% if t.difference_percentage > t.threshold %}text-danger{% else %}text-success{% endif %}">
+                            {{ t.difference_percentage }}%
+                        </td>
+                        <td>{{ t.threshold }}%</td>
+                        <td>
+                            {% if t.status == 'PASS' %}
+                                <span class="badge badge-pass">PASS</span>
+                            {% elif t.status == 'FAIL' %}
+                                <span class="badge badge-fail">FAIL</span>
+                            {% else %}
+                                <span class="badge badge-error">{{ t.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.executed_at }}</td>
+                        <td class="text-end">
+                            <a href="/testing/comparison/{{ t.id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View Comparison
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            No test executions recorded yet. Add an application and capture your first baseline.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 1. Ratio Donut Chart
+    const ratioCtx = document.getElementById('ratioChart').getContext('2d');
+    const passed = {{ stats.passed_tests }};
+    const failed = {{ stats.failed_tests }};
+    const total = {{ stats.total_tests }};
+
+    new Chart(ratioCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Passed', 'Failed'],
+            datasets: [{
+                data: [passed, failed],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 2. Trend Line Chart
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    const trendLabels = {{ trend_labels | tojson }};
+    const trendData = {{ trend_data | tojson }};
+
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: trendLabels.length ? trendLabels : ['No Runs'],
+            datasets: [{
+                label: 'Pixel Difference %',
+                data: trendData.length ? trendData : [0],
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#2563eb'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Diff %' }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

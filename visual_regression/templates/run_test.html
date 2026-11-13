@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block page_title %}Execute Visual Regression Test{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="table-card p-4">
+            <h4 class="mb-1">Run Automated Regression Test</h4>
+            <p class="text-muted small mb-4">Select target application and parameters to capture and compare live screenshots.</p>
+
+            <form action="/testing/start" method="POST" id="testRunForm">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Target Application</label>
+                    <select name="application_id" id="applicationSelect" class="form-select" required onchange="handleAppChange(this)">
+                        <option value="" disabled {% if not selected_app_id %}selected{% endif %}>-- Select Application --</option>
+                        {% for a in applications %}
+                        <option value="{{ a.id }}" data-url="{{ a.url }}" data-threshold="{{ a.default_threshold }}" data-viewport="{{ a.default_viewport }}" {% if selected_app_id == a.id %}selected{% endif %}>
+                            {{ a.name }} ({{ a.url }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Target Page URL</label>
+                    <input type="url" name="test_url" id="testUrlInput" class="form-control" value="{{ default_url or '' }}" placeholder="http://127.0.0.1:5001" required>
+                    <div class="form-text">Full URL to navigate and evaluate.</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Viewport Resolution</label>
+                        <select name="viewport" id="viewportSelect" class="form-select">
+                            <option value="desktop" selected>Desktop (1366x768)</option>
+                            <option value="laptop">Laptop (1280x800)</option>
+                            <option value="tablet">Tablet (768x1024)</option>
+                            <option value="mobile">Mobile (375x812)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Difference Threshold (%)</label>
+                        <input type="number" step="0.05" name="threshold" id="thresholdInput" class="form-control" value="0.5" min="0" max="100" required>
+                        <div class="form-text">Tolerance limit for PASS condition.</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Baseline Reference</label>
+                    <select name="baseline_id" id="baselineSelect" class="form-select">
+                        <option value="">-- Use Latest Approved Baseline for URL/Viewport --</option>
+                        {% for b in baselines %}
+                        <option value="{{ b.id }}" data-app="{{ b.application_id }}">
+                            #{{ b.id }} - {{ b.name }} ({{ b.viewport }} • {{ b.page_url }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" id="startBtn" class="btn btn-primary py-2 fs-6">
+                        <i class="bi bi-play-circle-fill me-2"></i> Launch Visual Test
+                    </button>
+                </div>
+            </form>
+
+            <div id="loadingIndicator" class="text-center py-4 d-none">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <div class="fw-semibold">Launching Headless Chrome & Analyzing Visual Geometry...</div>
+                <div class="text-muted small">Executing DOM extraction and OpenCV pixel-difference analysis.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function handleAppChange(select) {
+        const option = select.options[select.selectedIndex];
+        if (option && option.dataset.url) {
+            document.getElementById('testUrlInput').value = option.dataset.url;
+            document.getElementById('thresholdInput').value = option.dataset.threshold || '0.5';
+        }
+    }
+
+    document.getElementById('testRunForm').addEventListener('submit', function() {
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('loadingIndicator').classList.remove('d-none');
+    });
+
+    // Auto trigger on initial load if preselected
+    const appSel = document.getElementById('applicationSelect');
+    if (appSel.value) {
+        handleAppChange(appSel);
+    }
+</script>
+{% endblock %}
+
