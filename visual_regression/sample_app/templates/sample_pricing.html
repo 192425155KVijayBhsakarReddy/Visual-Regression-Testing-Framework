@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Billing & Subscription Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; }
+        .pricing-header { padding: 40px 0 20px; text-align: center; }
+        .price-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            /* Regressed: shifted card heights or margin */
+            margin-top: {% if regressed %}25px{% else %}0px{% endif %};
+        }
+        .price-val { font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 16px 0; }
+        .plan-btn {
+            width: 100%;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            /* Regressed: Color changes from purple to orange */
+            background-color: {% if regressed %}#ea580c{% else %}#7c3aed{% endif %};
+            border: 1px solid {% if regressed %}#ea580c{% else %}#7c3aed{% endif %};
+            color: #ffffff;
+        }
+        .popular-badge {
+            background-color: #10b981;
+            color: white;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="pricing-header">
+            <h2 class="fw-bold">Subscription Plans & Cloud Licensing</h2>
+            <p class="text-muted">Select the right compute scale for your DevOps and testing workload.</p>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <!-- Starter Plan -->
+            <div class="col-md-4">
+                <div class="price-card">
+                    <h5 class="fw-bold">Developer</h5>
+                    <p class="text-muted small">For individual developers and testing sandboxes.</p>
+                    <div class="price-val">$29<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <ul class="list-unstyled text-muted small text-start mb-4">
+                        <li class="mb-2">✓ 5 Concurrent Test Agents</li>
+                        <li class="mb-2">✓ 1,000 Visual Comparisons</li>
+                        <li class="mb-2">✓ 14 Days History Retention</li>
+                    </ul>
+                    <a href="#" class="plan-btn">Choose Developer</a>
+                </div>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="col-md-4">
+                <div class="price-card border-primary" style="border-width: 2px;">
+                    <div class="mb-2"><span class="popular-badge">Recommended</span></div>
+                    <h5 class="fw-bold">Professional Team</h5>
+                    <p class="text-muted small">For agile engineering squads and automated CI/CD.</p>
+                    <div class="price-val">$99<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <ul class="list-unstyled text-muted small text-start mb-4">
+                        <li class="mb-2">✓ 25 Concurrent Test Agents</li>
+                        <li class="mb-2">✓ Unlimited Visual Comparisons</li>
+                        <li class="mb-2">✓ Automated GitHub Actions Webhooks</li>
+                    </ul>
+                    <a href="#" class="plan-btn">Choose Professional</a>
+                </div>
+            </div>
+
+            <!-- Enterprise Plan -->
+            {% if not regressed %}
+            <div class="col-md-4">
+                <div class="price-card">
+                    <h5 class="fw-bold">Enterprise Cloud</h5>
+                    <p class="text-muted small">Dedicated private runners and SSO compliance.</p>
+                    <div class="price-val">$299<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <ul class="list-unstyled text-muted small text-start mb-4">
+                        <li class="mb-2">✓ Dedicated Kubernetes Cluster</li>
+                        <li class="mb-2">✓ Custom Threshold Profiles</li>
+                        <li class="mb-2">✓ 24/7 Priority SLA Support</li>
+                    </ul>
+                    <a href="#" class="plan-btn">Contact Sales</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

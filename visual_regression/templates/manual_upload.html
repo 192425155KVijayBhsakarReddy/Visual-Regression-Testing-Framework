@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block page_title %}Manual Image Upload & Visual Comparison{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="table-card p-4 mb-4">
+            <h4 class="mb-1">Direct Screenshot Comparison</h4>
+            <p class="text-muted small mb-4">
+                Upload any two local screenshot images (PNG or JPEG) to immediately perform computer vision difference analysis, contour defect identification, and intensity heatmap generation without needing a live URL.
+            </p>
+
+            <form action="/testing/compare-upload" method="POST" enctype="multipart/form-data" id="manualCompareForm">
+                <div class="row g-4 mb-4">
+                    <!-- Baseline File Upload -->
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <label class="form-label fw-bold text-dark">
+                                <i class="bi bi-file-earmark-check text-primary me-1"></i> 1. Baseline Image (Golden Standard)
+                            </label>
+                            <input type="file" name="baseline_image" id="baselineFile" class="form-control" accept="image/png, image/jpeg, image/webp" required onchange="previewUpload(this, 'previewBase')">
+                            <div class="mt-3 text-center d-none" id="previewBaseContainer">
+                                <img id="previewBase" class="img-fluid rounded border shadow-sm" style="max-height: 200px;" alt="Baseline Preview">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current File Upload -->
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <label class="form-label fw-bold text-dark">
+                                <i class="bi bi-file-earmark-diff text-danger me-1"></i> 2. Current / Modified Image
+                            </label>
+                            <input type="file" name="current_image" id="currentFile" class="form-control" accept="image/png, image/jpeg, image/webp" required onchange="previewUpload(this, 'previewCurr')">
+                            <div class="mt-3 text-center d-none" id="previewCurrContainer">
+                                <img id="previewCurr" class="img-fluid rounded border shadow-sm" style="max-height: 200px;" alt="Current Preview">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Target Application Label</label>
+                        <select name="application_id" class="form-select" required>
+                            {% for a in applications %}
+                            <option value="{{ a.id }}">{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tolerance Threshold (%)</label>
+                        <input type="number" step="0.05" name="threshold" class="form-control" value="0.5" min="0" max="100" required>
+                        <div class="form-text">Mark test as FAIL if difference exceeds this percentage.</div>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" id="compareBtn" class="btn btn-primary py-2 fs-6">
+                        <i class="bi bi-cpu-fill me-2"></i> Compare & Visually Mark Defects
+                    </button>
+                </div>
+            </form>
+
+            <div id="compareLoader" class="text-center py-4 d-none">
+                <div class="spinner-border text-primary mb-2" role="status"></div>
+                <div class="fw-semibold">Executing OpenCV Pixel Comparison & Contour Mapping...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewUpload(input, imgId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(imgId);
+                img.src = e.target.result;
+                img.parentElement.classList.remove('d-none');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    document.getElementById('manualCompareForm').addEventListener('submit', function() {
+        document.getElementById('compareBtn').disabled = true;
+        document.getElementById('compareLoader').classList.remove('d-none');
+    });
+</script>
+{% endblock %}

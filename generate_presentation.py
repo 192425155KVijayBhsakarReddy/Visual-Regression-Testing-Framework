@@ -490,3 +490,4 @@ def create_presentation(output_pptx):
 if __name__ == "__main__":
     out_file = sys.argv[1] if len(sys.argv) > 1 else "Visual_Regression_Testing_Presentation.pptx"
     create_presentation(out_file)
+

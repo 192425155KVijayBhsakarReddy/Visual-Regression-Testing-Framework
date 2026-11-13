@@ -86,6 +86,42 @@ def comparison_page(test_id):
         defects=[dict(d) for d in defects]
     )
 
+@testing_bp.route("/upload-compare", methods=["GET"])
+def manual_upload_page():
+    conn = get_db_connection()
+    apps = conn.execute("SELECT * FROM applications ORDER BY name ASC").fetchall()
+    conn.close()
+    return render_template(
+        "manual_upload.html",
+        active_page="manual_upload",
+        applications=[dict(a) for a in apps]
+    )
+
+@testing_bp.route("/compare-upload", methods=["POST"])
+def process_manual_upload():
+    app_id = request.form.get("application_id", type=int)
+    threshold = float(request.form.get("threshold", 0.5))
+    base_file = request.files.get("baseline_image")
+    curr_file = request.files.get("current_image")
+
+    if not app_id or not base_file or not curr_file:
+        flash("Application, Baseline Image, and Current Image are all required.", "error")
+        return redirect(url_for("testing.manual_upload_page"))
+
+    result = TestService.run_manual_image_comparison(
+        application_id=app_id,
+        baseline_file=base_file,
+        current_file=curr_file,
+        threshold=threshold
+    )
+
+    if not result["success"]:
+        flash(f"Comparison failed: {result.get('error')}", "error")
+        return redirect(url_for("testing.manual_upload_page"))
+
+    flash(f"Comparison complete! Result: {result['status']} (Diff: {result['difference_percentage']}%)", "success" if result["status"] == "PASS" else "error")
+    return redirect(url_for("testing.comparison_page", test_id=result["test_id"]))
+
 @testing_bp.route("/history")
 def history_page():
     app_id = request.args.get("app_id", "")

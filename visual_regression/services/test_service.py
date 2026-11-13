@@ -204,3 +204,113 @@ class TestService:
             "heatmap_path": heatmap_path
         }
 
+    @classmethod
+    def run_manual_image_comparison(
+        cls,
+        application_id: int,
+        baseline_file,
+        current_file,
+        threshold: float = 0.5
+    ) -> Dict[str, Any]:
+        """
+        Processes two directly uploaded image files (PNG/JPEG) without launching a browser.
+        Executes OpenCV dimension alignment, pixel diff, contour extraction, and heatmap rendering.
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        Config.init_directories()
+
+        base_path = str(Config.BASELINES_DIR / f"manual_base_app{application_id}_{timestamp}.png")
+        curr_path = str(Config.SCREENSHOTS_DIR / f"manual_curr_app{application_id}_{timestamp}.png")
+
+        baseline_file.save(base_path)
+        current_file.save(curr_path)
+
+        try:
+            base_img = ImageProcessor.load_image(base_path)
+            curr_img = ImageProcessor.load_image(curr_path)
+        except Exception as e:
+            return {"success": False, "error": f"Failed to decode uploaded images: {str(e)}"}
+
+        h, w = curr_img.shape[:2]
+        viewport_str = f"{w}x{h}"
+
+        # Computer Vision comparison
+        comparator = VisualComparator()
+        comp_result = comparator.compare(
+            baseline_img=base_img,
+            current_img=curr_img,
+            acceptable_threshold_percent=threshold
+        )
+
+        diff_path = str(Config.DIFFS_DIR / f"manual_diff_app{application_id}_{timestamp}.png")
+        heatmap_path = str(Config.HEATMAPS_DIR / f"manual_heatmap_app{application_id}_{timestamp}.png")
+
+        ImageProcessor.save_image(comp_result["diff_overlay"], diff_path)
+        heatmap_img = HeatmapGenerator.generate_heatmap(
+            gray_diff=comp_result["gray_diff"],
+            current_img=curr_img
+        )
+        ImageProcessor.save_image(heatmap_img, heatmap_path)
+
+        # Record in SQLite database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Create baseline entry for manual run
+        cursor.execute(
+            """INSERT INTO baselines (application_id, name, page_url, viewport, width, height, file_path, is_approved)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 1)""",
+            (application_id, f"Uploaded Manual Baseline ({timestamp})", "manual://uploaded", viewport_str, w, h, base_path)
+        )
+        baseline_id = cursor.lastrowid
+
+        cursor.execute(
+            """INSERT INTO test_executions 
+               (application_id, baseline_id, test_url, viewport, threshold, screenshot_path, diff_path, heatmap_path,
+                total_pixels, changed_pixels, difference_percentage, ssim_score, status, browser_info, dom_changes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Manual File Upload Engine', '[]')""",
+            (
+                application_id,
+                baseline_id,
+                "manual://uploaded",
+                viewport_str,
+                threshold,
+                curr_path,
+                diff_path,
+                heatmap_path,
+                comp_result["total_pixels"],
+                comp_result["changed_pixels"],
+                comp_result["difference_percentage"],
+                comp_result["ssim_score"],
+                comp_result["status"]
+            )
+        )
+        test_id = cursor.lastrowid
+
+        # Insert detected visual defects
+        for box in comp_result["bounding_boxes"]:
+            cursor.execute(
+                """INSERT INTO detected_defects 
+                   (test_execution_id, defect_type, description, x, y, width, height, severity)
+                   VALUES (?, 'visual_difference', ?, ?, ?, ?, ?, ?)""",
+                (test_id, f"Pixel deviation region ({box['width']}x{box['height']} px)", box["x"], box["y"], box["width"], box["height"], "HIGH" if comp_result["status"] == "FAIL" else "LOW")
+            )
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "success": True,
+            "test_id": test_id,
+            "status": comp_result["status"],
+            "difference_percentage": comp_result["difference_percentage"],
+            "threshold": threshold,
+            "ssim_score": comp_result["ssim_score"],
+            "changed_pixels": comp_result["changed_pixels"],
+            "total_pixels": comp_result["total_pixels"],
+            "defect_count": len(comp_result["bounding_boxes"]),
+            "screenshot_path": curr_path,
+            "diff_path": diff_path,
+            "heatmap_path": heatmap_path
+        }
+
