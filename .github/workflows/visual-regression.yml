@@ -82,6 +82,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
 
     steps:
       - name: 📥 Checkout Repository
@@ -97,20 +100,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔐 Log in to Docker Hub (if configured)
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+      - name: 🔐 Log in to Docker Hub
+        if: env.DOCKERHUB_USER != ''
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USER }}
+          password: ${{ env.DOCKERHUB_PASS }}
 
       - name: 🏷️ Determine Docker Tags
         id: tags
         run: |
           TAGS="ghcr.io/192425155kvijaybhsakarreddy/visual-regression-platform:latest"
-          DH_USER="${{ secrets.DOCKERHUB_USERNAME }}"
-          if [ -n "$DH_USER" ]; then
-            DH_USER_LOWER=$(echo "$DH_USER" | tr '[:upper:]' '[:lower:]')
+          if [ -n "$DOCKERHUB_USER" ]; then
+            DH_USER_LOWER=$(echo "$DOCKERHUB_USER" | tr '[:upper:]' '[:lower:]')
             TAGS="$TAGS,$DH_USER_LOWER/visual-regression-platform:latest"
           fi
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
