@@ -25,10 +25,15 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: 📦 Install System Dependencies & Headless Chromium
+      - name: 📦 Install System Dependencies & Google Chrome
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver libgl1-mesa-glx libglib2.0-0 curl
+          sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 curl wget
+          # Install official Google Chrome on Ubuntu runner
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       - name: ⚙️ Install Python Dependencies
         run: |
@@ -38,7 +43,7 @@ jobs:
       - name: 🧪 Execute Unit, Layout & Computer Vision Tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-          CHROME_BIN: /usr/bin/chromium-browser
+          CHROME_BIN: /usr/bin/google-chrome
           SELENIUM_HEADLESS: "true"
         run: |
           python -m pytest visual_regression/tests -v
@@ -54,7 +59,7 @@ jobs:
       - name: 👁️ Execute Automated Visual Regression Suite
         env:
           PYTHONPATH: ${{ github.workspace }}
-          CHROME_BIN: /usr/bin/chromium-browser
+          CHROME_BIN: /usr/bin/google-chrome
           SELENIUM_HEADLESS: "true"
         run: |
           python visual_regression/cli_runner.py --app-url http://127.0.0.1:5001/ --threshold 0.5 --output-dir ci_reports
