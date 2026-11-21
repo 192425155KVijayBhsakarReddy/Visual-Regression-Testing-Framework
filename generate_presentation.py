@@ -307,7 +307,7 @@ def create_presentation(output_pptx):
     # -------------------------------------------------------------
     # SLIDE 8: Module 1 Sample Screenshot (Baseline Screen)
     # -------------------------------------------------------------
-    baseline_img = "C:\\Users\\vijay\\AI-Screen-Analyzer\\visual_regression\\storage\\baselines\\baseline_app1_1366x768_20261113_193855.png"
+    baseline_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/report_assets/app_5_target_sample.png"
     add_content_slide(
         "Module 1: Baseline Screenshot Capture",
         [
@@ -358,7 +358,7 @@ def create_presentation(output_pptx):
     # -------------------------------------------------------------
     # SLIDE 10: Module 2 Sample Screenshot (Difference Overlay & Heatmap)
     # -------------------------------------------------------------
-    heatmap_img = "C:\\Users\\vijay\\AI-Screen-Analyzer\\visual_regression\\storage\\heatmaps\\heatmap_app1_20261113_194426.png"
+    diff_box_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/visual_regression/storage/diffs/diff_app1_20261113_194426.png"
     add_content_slide(
         "Module 2: Visual Difference & Heatmap Analysis",
         [
@@ -368,13 +368,13 @@ def create_presentation(output_pptx):
             "• The comparison measured a 9.27% pixel change, exceeding the 0.5% threshold and triggering FAIL.",
             "• Provides human testers with immediate visual verification of exactly where the regression occurred."
         ],
-        image_path=heatmap_img
+        image_path=diff_box_img
     )
 
     # -------------------------------------------------------------
     # SLIDE 11: Module 3 Description & CI/CD Screenshot
     # -------------------------------------------------------------
-    diff_img = "C:\\Users\\vijay\\AI-Screen-Analyzer\\visual_regression\\storage\\diffs\\diff_app1_20261113_194426.png"
+    cicd_dag_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/report_assets/github_2_workflow_dag_artifacts.jpg"
     add_content_slide(
         "Module 3: Web Dashboard, Docker & CI/CD",
         [
@@ -384,7 +384,7 @@ def create_presentation(output_pptx):
             "• Dockerfile and Docker Compose bundle the dashboard and target application as microservices.",
             "• GitHub Actions pipeline executes the CLI runner and breaks builds automatically upon regression."
         ],
-        image_path=diff_img
+        image_path=cicd_dag_img
     )
 
     # -------------------------------------------------------------
