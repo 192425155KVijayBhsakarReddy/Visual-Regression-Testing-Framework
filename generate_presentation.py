@@ -374,7 +374,7 @@ def create_presentation(output_pptx):
     # -------------------------------------------------------------
     # SLIDE 11: Module 3 Description & CI/CD Screenshot
     # -------------------------------------------------------------
-    cicd_dag_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/report_assets/github_2_workflow_dag_artifacts.jpg"
+    cicd_dag_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/report_assets/github_2_workflow_dag_artifacts.png"
     add_content_slide(
         "Module 3: Web Dashboard, Docker & CI/CD",
         [
