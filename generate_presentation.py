@@ -388,6 +388,22 @@ def create_presentation(output_pptx):
     )
 
     # -------------------------------------------------------------
+    # SLIDE 12: Module 4: Atlassian Jira Cloud Integration
+    # -------------------------------------------------------------
+    jira_defect_img = "C:/Users/vijay/Visual-Regression-Testing-Framework/report_assets/jira_1_defect_ticket.png"
+    add_content_slide(
+        "Module 4: Atlassian Jira Cloud & Agile Management",
+        [
+            "• Native enterprise integration with Atlassian Jira Cloud REST API v3 (Project: VRF).",
+            "• Automated Bug issue generation whenever visual divergence exceeds acceptable quality tolerance.",
+            "• Structured Atlassian Document Format (ADF) containing metrics, viewport, and defect coordinates.",
+            "• Automated multipart upload of OpenCV diff overlays and thermal heatmaps as ticket attachments.",
+            "• Agile Scrum sprint board (VRF Sprint 1) and backlog synchronization across 40 tracked work items."
+        ],
+        image_path=jira_defect_img
+    )
+
+    # -------------------------------------------------------------
     # SLIDE 12: Future Scope
     # -------------------------------------------------------------
     def draw_future_diagram(slide, x, y, w, h):
