@@ -21,10 +21,21 @@
                 Application: <strong>{{ test.application_name }}</strong> • URL: <a href="{{ test.test_url }}" target="_blank">{{ test.test_url }}</a> • Executed: {{ test.executed_at }}
             </p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
             <a href="/reports/view/{{ test.id }}" target="_blank" class="btn btn-outline-secondary">
                 <i class="bi bi-file-earmark-arrow-down me-1"></i> View Report
             </a>
+            {% if test.jira_issue_key %}
+            <a href="{{ test.jira_issue_url }}" target="_blank" class="btn btn-primary">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Jira Ticket: {{ test.jira_issue_key }}
+            </a>
+            {% elif test.status == 'FAIL' %}
+            <form action="/reports/jira-bug/{{ test.id }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-bug me-1"></i> File Jira Defect
+                </button>
+            </form>
+            {% endif %}
             {% if test.status == 'FAIL' %}
             <form action="/baselines/approve-from-test/{{ test.id }}" method="POST" onsubmit="return confirm('Update approved baseline with this current screenshot? This cannot be undone automatically.');">
                 <button type="submit" class="btn btn-success">

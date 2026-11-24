@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, Response, send_file, flash, redirect, url_for
+from flask import Blueprint, render_template, request, Response, send_file, flash, redirect, url_for, jsonify
 from visual_regression.database import get_db_connection
 from visual_regression.reports.report_generator import ReportGenerator
+from visual_regression.services.test_service import TestService
+from visual_regression.services.jira_service import JiraService
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -45,4 +47,21 @@ def download_report(test_id):
             mimetype="text/html",
             headers={"Content-Disposition": f"attachment;filename=report_test_{test_id}.html"}
         )
+
+@reports_bp.route("/jira-bug/<int:test_id>", methods=["GET", "POST"])
+def file_jira_bug(test_id):
+    result = TestService.file_jira_issue_for_test(test_id)
+    if result.get("success"):
+        if result.get("already_filed"):
+            flash(f"Jira issue already exists for Test #{test_id}: {result.get('issue_key')}", "info")
+        else:
+            flash(f"Successfully filed Jira defect ticket: {result.get('issue_key')}!", "success")
+    else:
+        flash(f"Failed to file Jira issue: {result.get('error')}", "error")
+    return redirect(url_for("testing.comparison_page", test_id=test_id))
+
+@reports_bp.route("/jira-test-connection")
+def jira_test_connection():
+    status = JiraService.test_connection()
+    return jsonify(status)
 

@@ -44,6 +44,8 @@ class ReportGenerator:
 
         status_class = "pass" if data["status"] == "PASS" else ("fail" if data["status"] == "FAIL" else "error")
         status_badge = f'<span class="badge {status_class}">{data["status"]}</span>'
+        if data.get("jira_issue_key"):
+            status_badge += f' <a href="{data.get("jira_issue_url", "#")}" target="_blank" style="display: inline-block; margin-left: 8px; background: #0052cc; color: #fff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-weight: 700; font-size: 13px; text-transform: uppercase;">Jira: {data["jira_issue_key"]}</a>'
 
         defects_rows = ""
         for d in data.get("defects", []):

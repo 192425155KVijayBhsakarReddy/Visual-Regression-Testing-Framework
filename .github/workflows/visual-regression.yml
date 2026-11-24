@@ -57,6 +57,11 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           CHROME_BIN: /usr/bin/google-chrome
           SELENIUM_HEADLESS: "true"
+          JIRA_URL: "https://07vijay.atlassian.net"
+          JIRA_EMAIL: "192425155.simats@saveetha.com"
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: "VRF"
+          JIRA_AUTO_CREATE_ON_FAIL: "true"
         run: |
           python visual_regression/cli_runner.py --app-url http://127.0.0.1:5001/ --threshold 0.5 --output-dir ci_reports
 

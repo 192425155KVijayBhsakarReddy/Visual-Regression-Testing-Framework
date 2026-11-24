@@ -38,6 +38,11 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Environment secrets
+.env
+*.env
+.env.local
+
 # Storage artifacts (ignore dynamic run files except baselines)
 visual_regression/storage/screenshots/*
 visual_regression/storage/diffs/*

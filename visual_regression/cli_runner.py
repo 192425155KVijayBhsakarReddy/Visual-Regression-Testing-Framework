@@ -11,6 +11,7 @@ from visual_regression.config import Config
 from visual_regression.database import init_db, get_db_connection
 from visual_regression.services.baseline_service import BaselineService
 from visual_regression.services.test_service import TestService
+from visual_regression.services.jira_service import JiraService
 from visual_regression.reports.report_generator import ReportGenerator
 
 def main():
@@ -114,6 +115,10 @@ def main():
     print(f"Structural Similarity:  {result.get('ssim_score')}")
     print(f"Defects Flagged:        {result.get('defect_count')}")
     print(f"HTML Report Generated:  {out_dir / f'report_test_{test_id}.html'}")
+    if result.get("jira_issue"):
+        ji = result["jira_issue"]
+        if ji.get("success"):
+            print(f"JIRA DEFECT TICKET:     {ji.get('issue_key')} -> {ji.get('issue_url')}")
     print("==================================================")
 
     if status == "FAIL":

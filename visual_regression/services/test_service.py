@@ -11,6 +11,7 @@ from visual_regression.vision.image_processor import ImageProcessor
 from visual_regression.vision.visual_comparator import VisualComparator
 from visual_regression.vision.heatmap_generator import HeatmapGenerator
 from visual_regression.vision.layout_analyzer import LayoutAnalyzer
+from visual_regression.services.jira_service import JiraService
 
 logger = logging.getLogger("TestService")
 
@@ -189,6 +190,13 @@ class TestService:
         conn.commit()
         conn.close()
 
+        jira_info = None
+        if comp_result["status"] == "FAIL" and Config.JIRA_AUTO_CREATE_ON_FAIL and JiraService.is_configured():
+            try:
+                jira_info = cls.file_jira_issue_for_test(test_id)
+            except Exception as e:
+                logger.error("Auto-filing Jira defect failed for test #%s: %s", test_id, str(e))
+
         return {
             "success": True,
             "test_id": test_id,
@@ -201,7 +209,8 @@ class TestService:
             "defect_count": len(all_defects),
             "screenshot_path": screenshot_path,
             "diff_path": diff_path,
-            "heatmap_path": heatmap_path
+            "heatmap_path": heatmap_path,
+            "jira_issue": jira_info
         }
 
     @classmethod
@@ -299,6 +308,13 @@ class TestService:
         conn.commit()
         conn.close()
 
+        jira_info = None
+        if comp_result["status"] == "FAIL" and Config.JIRA_AUTO_CREATE_ON_FAIL and JiraService.is_configured():
+            try:
+                jira_info = cls.file_jira_issue_for_test(test_id)
+            except Exception as e:
+                logger.error("Auto-filing Jira defect failed for manual test #%s: %s", test_id, str(e))
+
         return {
             "success": True,
             "test_id": test_id,
@@ -311,6 +327,65 @@ class TestService:
             "defect_count": len(comp_result["bounding_boxes"]),
             "screenshot_path": curr_path,
             "diff_path": diff_path,
-            "heatmap_path": heatmap_path
+            "heatmap_path": heatmap_path,
+            "jira_issue": jira_info
         }
+
+    @classmethod
+    def file_jira_issue_for_test(cls, test_id: int) -> Dict[str, Any]:
+        """
+        Creates a defect issue in Jira for the specified test_id, attaches diff & heatmap images,
+        and saves the Jira issue key and URL into test_executions.
+        """
+        conn = get_db_connection()
+        test = conn.execute("""
+            SELECT t.*, a.name as application_name
+            FROM test_executions t
+            JOIN applications a ON t.application_id = a.id
+            WHERE t.id = ?
+        """, (test_id,)).fetchone()
+
+        if not test:
+            conn.close()
+            return {"success": False, "error": f"Test execution #{test_id} not found."}
+
+        test_data = dict(test)
+        if test_data.get("jira_issue_key"):
+            conn.close()
+            return {
+                "success": True,
+                "already_filed": True,
+                "issue_key": test_data["jira_issue_key"],
+                "issue_url": test_data.get("jira_issue_url", "")
+            }
+
+        defects = conn.execute(
+            "SELECT * FROM detected_defects WHERE test_execution_id = ? ORDER BY severity DESC",
+            (test_id,)
+        ).fetchall()
+        defects_list = [dict(d) for d in defects]
+
+        diff_path = test_data.get("diff_path")
+        heatmap_path = test_data.get("heatmap_path")
+
+        jira_res = JiraService.create_visual_bug(
+            test_data=test_data,
+            defects=defects_list,
+            diff_image_path=diff_path,
+            heatmap_image_path=heatmap_path
+        )
+
+        if jira_res.get("success"):
+            issue_key = jira_res.get("issue_key")
+            issue_url = jira_res.get("issue_url")
+            conn.execute(
+                "UPDATE test_executions SET jira_issue_key = ?, jira_issue_url = ? WHERE id = ?",
+                (issue_key, issue_url, test_id)
+            )
+            conn.commit()
+            logger.info("Associated Jira issue %s with test execution #%s", issue_key, test_id)
+
+        conn.close()
+        return jira_res
+
 

@@ -70,6 +70,8 @@ def init_db():
         error_message TEXT,
         browser_info TEXT,
         dom_changes TEXT,
+        jira_issue_key TEXT,
+        jira_issue_url TEXT,
         executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (application_id) REFERENCES applications (id) ON DELETE CASCADE,
         FOREIGN KEY (baseline_id) REFERENCES baselines (id) ON DELETE SET NULL
@@ -97,6 +99,16 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_exec_status ON test_executions(status);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_exec_date ON test_executions(executed_at);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_baseline_app ON baselines(application_id);")
+
+    # Safe migration for existing databases: ensure jira columns exist
+    try:
+        cursor.execute("ALTER TABLE test_executions ADD COLUMN jira_issue_key TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE test_executions ADD COLUMN jira_issue_url TEXT;")
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
     conn.close()
