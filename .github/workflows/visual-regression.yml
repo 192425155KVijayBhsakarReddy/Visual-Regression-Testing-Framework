@@ -14,6 +14,15 @@ jobs:
   ci-test:
     name: 🧪 Continuous Integration & Visual Testing
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      CHROME_BIN: /usr/bin/google-chrome
+      SELENIUM_HEADLESS: "true"
+      JIRA_URL: "https://07vijay.atlassian.net"
+      JIRA_EMAIL: "192425155.simats@saveetha.com"
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT_KEY: "VRF"
+      JIRA_AUTO_CREATE_ON_FAIL: "true"
 
     steps:
       - name: 📥 Checkout Repository

@@ -4,6 +4,23 @@ from visual_regression.config import Config
 from visual_regression.services.jira_service import JiraService
 
 class TestJiraIntegration(unittest.TestCase):
+    def setUp(self):
+        self.orig_token = Config.JIRA_API_TOKEN
+        self.orig_email = Config.JIRA_EMAIL
+        self.orig_url = Config.JIRA_URL
+        self.orig_project = Config.JIRA_PROJECT_KEY
+        
+        Config.JIRA_API_TOKEN = "mock_api_token_xyz"
+        Config.JIRA_EMAIL = "192425155.simats@saveetha.com"
+        Config.JIRA_URL = "https://07vijay.atlassian.net"
+        Config.JIRA_PROJECT_KEY = "VRF"
+
+    def tearDown(self):
+        Config.JIRA_API_TOKEN = self.orig_token
+        Config.JIRA_EMAIL = self.orig_email
+        Config.JIRA_URL = self.orig_url
+        Config.JIRA_PROJECT_KEY = self.orig_project
+
     def test_jira_configured(self):
         self.assertTrue(JiraService.is_configured())
         self.assertEqual(Config.JIRA_PROJECT_KEY, "VRF")
